@@ -1,188 +1,314 @@
-// main.cpp
+//  main.cpp
 //  Flip-Flop-Game
-//
 //  Created by Ganesh Koripalli on 10/3/17.
 //  Copyright © 2017 Ganesh Koripalli. All rights reserved.
 
+/*
+Headers for Visual Studio
+#include <iostream>
+#include <GL/glew.h>
+#include <GL/glut.h>
+#include <GL/glfw.h>
+#include <SOIL.h>
+*/
+
+//Headers for Xcode
 #include "OpenGL/gl.h"
 #include "OpenGL/glu.h"
 #include <GLUT/glut.h>
 #include <iostream>
 
-/*#include <iostream>
-#include <GL/glew.h>
-#include <GL/glut.h>*/
+//Variables
+GLfloat delta = 0.25;
+GLint axis = 2;
+GLuint texture[6];
+GLuint texture_s[2];
+int rotate = -1;
+int stop = 0;
+int elements = 16;
+int width = 200;
+int height = 200;
 
-GLsizei mouseX = 0, mouseY = 0;
-GLsizei winWidth = 0, winHeight = 0;
-GLfloat side = 50; //size of the square whenever mouse left button is clicked
-GLfloat redColor[3] = { 1,0,0 };
-GLfloat blueColor[3] = { 0,0,1 };
+GLfloat theta[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
+GLfloat pick_Cube[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+//Vertices of cube about the orgin
+GLfloat vertices[][3] = { { 0.0 ,0.0 ,-5.0 },{ 198.0, 0.0, -5.0 },{ 198.0,198.0,-5.0 },{ 0.0,198,-5.0 },{ 0.0, 0.0, 5.0 },{ 198.0,0.0,5.0 },{ 198.0, 198.0, 5.0 },{ 0.0, 198.0, 5.0 } };
+
+GLfloat arrays[16][4] = { { -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0},{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0},{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 },{ -1.0,0.0,0.0,0.0 } };
+
+//Spin the cube about the axis
+void spinCube(int id) {
+    
+    int success = 0;
+    int g = 0;
+    int check[2];
+    
+    pick_Cube[id - 1] += 1;
+    check[g] = id - 1;
+    g++;
+    
+    if (g == 2) {
+        
+        if ((arrays[check[0]][0]) == check[1]) {
+            
+            success++;
+            
+        } else {
+            
+            if (pick_Cube[check[1]] > 0) {
+                
+                    rotate = check[0];
+                
+            } else {
+                
+                     pick_Cube[check[0]] += 1;
+                
+            }
+            pick_Cube[check[1]] += 1;
+        }
+        g = 0;
+    }
+    
+    if (success == 8) {
+        
+        stop = 1;
+        
+    }
+}
+
+//draw the grid
 void drawLines() {
-    
+    int i;
     glLineWidth(2.5);
-    glColor3fv(redColor);
+    glColor3f(0.0, 0, 1.0);
     
-    //For loop for drawing the lines
-    for (int i = 0; i <= 800; i += 200) {
-        glBegin(GL_LINES);
-        glVertex3f(i, 0.0 , 0.0);
-        glVertex3f(i, 800, 0.0);
-        glEnd();
-        glBegin(GL_LINES);
-        glVertex3f(800, i , 0.0);
-        glVertex3f(0, i, 0);
-        glEnd();
-    }
+        for (i = 0; i <= 800; i += 200) {
+            
+            glBegin(GL_LINES);
+            glVertex3f(i, 0.0, 0.0);
+            glVertex3f(i, 800, 0);
+            glEnd();
+            
+            glBegin(GL_LINES);
+            glVertex3f(0.0, i, 0.0);
+            glVertex3f(800, i, 0);
+            glEnd();
+            
+        }
 }
 
-//void drawCube() {
-// //for loop for making the cubes within the board
-// for (int i = 0; i <= 800; i += 200) {
-//
-// }
-//}
-
-void drawSquare() { //draw the square in between the grid squares
-    glColor3fv(blueColor);
+//Drawing a face
+void face(int a, int b, int c, int d) {
     
-    /*glVertex3f(mouseX, mouseY, 0);
-     glVertex3f(mouseX + side, mouseY, 0);
-     glVertex3f(mouseX + side, mouseY + side, 0);
-     glVertex3f(mouseX, mouseY + side, 0);*/
-    for (int i = 0; i <= 800; i += 200) {
-        glBegin(GL_POLYGON);
-        glVertex3f(50 + i, 50, 0);
-        glVertex3f(side, 50, 0);
-        glVertex3f(side, side, 0);
-        glVertex3f(50, side, 0);
-        glEnd();
-    }
-    glFlush();
+    glBegin(GL_POLYGON);
+    glVertex3fv(vertices[a]);
+    glVertex3fv(vertices[b]);
+    glVertex3fv(vertices[c]);
+    glVertex3fv(vertices[d]);
+    glEnd();
+    
 }
 
+//color the cube
+void colorcube(void) {
+    
+    float pixels[] = { 0.0f, 0.0f, 0.0f, 100.0f, 100.0f, 100.0f,
+        100.0f, 100.0f, 100.0f, 0.0f, 0.0f, 0.0f };
+    
+    unsigned char* image = SOIL_load_image("image/1.png", &width, &height, 0, SOIL_LOAD_RGB);
+    
+    glBindTexture(GL_TEXTURE_2D, texture_s[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    
+    static int i = 0;
+    
+    glColor3f(0, 0, 1.0);
+    face(0, 3, 2, 1);
+    glColor3f(0, 1.0, 0);
+    face(2, 3, 7, 6);
+    face(0, 4, 7, 3);
+    face(1, 2, 6, 5);
+    
+    glColor3f(arrays[i][1] / 10, arrays[i][2] / 10, arrays[i][3] / 10);
+    
+    i++;
+    if (i > 15) {
+        
+        i = 0;
+    
+    }
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_FLOAT, pixels);
+    face(4, 5, 6, 7);
+    glColor3f(0, 1.0, 0);
+    face(0, 1, 5, 4);
+    SOIL_free_image_data(image);
+}
+
+//display the cubes
 void display(void) {
-    glClearColor(1, 1, 1, 1); //changes the background color to white
-    glClear(GL_COLOR_BUFFER_BIT);
-    glLoadIdentity();
+    
+    int z = 0;
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    
+    glPushMatrix();
     drawLines();
-    drawSquare();
-    glFlush();
+    glPopMatrix();
+    
+    glPushMatrix();
+    glInitNames();
+    glPushName(0);
+    
+    for (int i = 0; i <= 3; i++)
+        
+        for (int j = 0; j <= 3; j++) {
+            
+            glPushMatrix();
+            glTranslatef(200 * j, 200.0 * i, 0.0);
+            glRotatef(theta[z], 1.0, 1.0, 0.0);
+            colorcube();
+            glPopMatrix();
+            z++;
+            
+        }
+    
+    glutSwapBuffers();
+    
 }
 
-void reshape(int w, int h) {
-    glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+void myReshape(int w, int h) {
+    
+    GLfloat aspect = (GLfloat)w / (GLfloat)h;
+    glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0.0, 800, 800, 0, -1.0, 1.0);
+    glOrtho(0, 800, 0, 850, 400.0, -400.0);
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    
+}
+//Checks which cube to be rotated with the click of the mouse
+void mouseSelection(int x, int y) {
+    
+    if (y > 50 && y < 250) {
+        
+        if (x > 0 && x < 200 && theta[12] != 180)
+            spinCube(13);
+            else if (x > 200 && x < 400 && theta[13] != 180)
+                spinCube(14);
+                else if (x > 400 && x < 600 && theta[14] != 180)
+                    spinCube(15);
+                    else if (x > 600 && x < 800 && theta[15] != 180)
+                        spinCube(16);
+        
+    } else if (y > 250 && y < 450) {
+            
+            if (x > 0 && x < 200 && theta[8] != 180)
+                spinCube(9);
+                else if (x > 200 && x < 400 && theta[9] != 180)
+                    spinCube(10);
+                    else if (x > 400 && x < 600 && theta[10] != 180)
+                        spinCube(11);
+                        else if (x > 600 && x < 800 && theta[11] != 180)
+                            spinCube(12);
+            
+    } else if (y > 450 && y < 650) {
+            
+                if (x > 0 && x < 200 && theta[4] != 180)
+                    spinCube(5);
+                    else if (x > 200 && x < 400 && theta[5] != 180)
+                        spinCube(6);
+                        else if (x > 400 && x < 600 && theta[6] != 180)
+                            spinCube(7);
+                            else if (x > 600 && x < 800 && theta[7] != 180)
+                                spinCube(8);
+            
+    } else if (y > 650 && y < 850) {
+                
+                    if (x > 0 && x < 200 && theta[0] != 180)
+                        spinCube(1);
+                        else if (x > 200 && x < 400 && theta[1] != 180)
+                            spinCube(2);
+                            else if (x > 400 && x < 600 && theta[2] != 180)
+                                spinCube(3);
+                                else if (x > 600 && x < 800 && theta[3] != 180)
+                                    spinCube(4);
+                
+    }
 }
 
-void spindisplay(void) {
+//Use the mouse mouseSelction function
+void mouse(int btn, int state, int x, int y){
+    
+    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        
+        mouseSelection(x, y);
+        
+    }
+}
+
+//Keyboard function
+void keyboard(unsigned char key, int x, int y) {
+    
+    if (key == 'q' || key == 'Q') {
+        
+        exit(0);
+        
+    }
+}
+
+//change the angle of certain cube to rotate the cube
+void spinCube2() {
+    
+    for (int i = 0; i < elements; i++) {
+        
+        if (pick_Cube[i] > 0) {
+            
+            theta[i] += delta;
+            
+            if (theta[i] == 180) {
+                
+                pick_Cube[i] -= 1;
+                
+                if (rotate != -1 && rotate != i) {
+                    
+                    pick_Cube[rotate] += 1;
+                    rotate = -1;
+                    
+                }
+            }
+            
+            if (theta[i] > 360.0) {
+                
+                theta[i] -= 360.0;
+                pick_Cube[i] -= 1;
+                
+            }
+        }
+    }
     glutPostRedisplay();
 }
 
-//Mouse X position
-void setX(int x) {
-    mouseX = x;
-}
-
-//Mouse Y position
-void setY(int y) {
-    mouseY = y;
-}
-
-void mouse(int btn, int state, int x, int y) {
-    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        setX(x);
-        setY(y);
-        glutPostRedisplay();
-    }
-    if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
-        exit(1);
-    }
-}
-
-int main(int argc, char **argv) {
+//main function
+int main(int argc, char** argv) {
+    
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(800, 800);
-    glutInitWindowPosition(200, 200);
-    glutCreateWindow("Basic Grid - Mouse Interaction");
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(800, 850);
+    glutCreateWindow("Flip-Flop-Match-Game");
+    glutReshapeFunc(myReshape);
     glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
+    glutIdleFunc(spinCube2);
     glutMouseFunc(mouse);
-    glutIdleFunc(spindisplay);
-    winWidth = glutGet(GLUT_WINDOW_WIDTH);
-    winHeight = glutGet(GLUT_WINDOW_WIDTH);
+    glutKeyboardFunc(keyboard);
+    glEnable(GL_DEPTH_TEST);
     glutMainLoop();
+    return 0;
+    
 }
-
-
-//#define LIMIT 10.0
-//#define X  2.0
-//#define Y  2.0
-//#define WIDTH  2.0
-//#define HEIGHT  2.0
-//
-//// Create a blue square to be placed in the window
-//void drawSquare(double x1, double y1, double length)
-//{
-//    double halfLength = length / 2;
-//
-//    glColor3d(0.2, 0.5, 1);
-//    glBegin(GL_POLYGON);
-//    glVertex2d(x1 + halfLength, y1 + halfLength);
-//    glVertex2d(x1 + halfLength, y1 - halfLength);
-//    glVertex2d(x1 - halfLength, y1 - halfLength);
-//    glVertex2d(x1 - halfLength, y1 + halfLength);
-//    glEnd();
-//}
-//
-//// Display a 4x4 grid of blue squares
-//void display() {
-//    glClear(GL_COLOR_BUFFER_BIT);
-//    glColor3f(1.0, 0.0, 0.0);
-//
-//    //Array of 4 x 4 squares
-//    drawSquare(1, 1, 2);
-//    drawSquare(1, 3.2, 2);
-//    drawSquare(1, 5.4, 2);
-//    drawSquare(1, 7.6, 2);
-//    drawSquare(3.2, 1, 2);
-//    drawSquare(3.2, 3.2, 2);
-//    drawSquare(3.2, 5.4, 2);
-//    drawSquare(3.2, 7.6, 2);
-//    drawSquare(5.4, 1, 2);
-//    drawSquare(5.4, 3.2, 2);
-//    drawSquare(5.4, 5.4, 2);
-//    drawSquare(5.4, 7.6, 2);
-//    drawSquare(7.6, 1, 2);
-//    drawSquare(7.6, 3.2, 2);
-//    drawSquare(7.6, 5.4, 2);
-//    drawSquare(7.6, 7.6, 2);
-//
-//    glFlush();
-//}
-//
-//// Clip the scene
-//void setup() {
-//    glClearColor(1.0, 1.0, 1.0, 1.0);
-//    gluOrtho2D(LIMIT - 11, LIMIT, LIMIT - 11, LIMIT);
-//}
-//
-//int main(int argc, char *argv[]) {
-//    glutInit(&argc, argv);
-//    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-//    glutInitWindowPosition(200, 100);
-//    glutInitWindowSize(800, 800);
-//    glutCreateWindow("Flip Flop Matching Game");
-//    glutDisplayFunc(display);
-//    setup();
-//    glutMainLoop();
-//
-//    return 0;
-//}
-
